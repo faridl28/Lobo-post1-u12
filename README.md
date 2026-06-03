@@ -13,6 +13,17 @@ Contenedorización del catálogo de productos con Docker multi-stage y despliegu
 
 ---
 
+## URL pública en Railway
+
+**https://lobo-post1-u12-production.up.railway.app**
+
+Verificar salud:
+```
+GET https://lobo-post1-u12-production.up.railway.app/actuator/health
+```
+
+---
+
 ## Requisitos locales
 
 - Docker Desktop instalado y en ejecución
@@ -23,7 +34,7 @@ Contenedorización del catálogo de productos con Docker multi-stage y despliegu
 
 ## Construcción y ejecución local
 
-### Solo Docker (sin Compose)
+### Solo Docker
 ```bash
 docker build -t catalogo:local .
 docker run -p 8080:8080 catalogo:local
@@ -32,24 +43,29 @@ docker run -p 8080:8080 catalogo:local
 ### Con Docker Compose (app + PostgreSQL)
 ```bash
 docker compose up -d --build
-```
-
-Verificar que ambos servicios estén activos:
-```bash
 docker compose ps
 ```
 
-Verificar salud de la aplicación:
+Verificar salud:
 ```bash
 curl http://localhost:8080/actuator/health
 ```
 
-Detener los servicios:
+Detener:
 ```bash
 docker compose down
 ```
 
 ---
+
+## Capturas de pantalla
+
+<img width="921" height="517" alt="image" src="https://github.com/user-attachments/assets/a58d8542-aa0f-47b5-85fa-836413f4cc8c" />
+<img width="921" height="478" alt="image" src="https://github.com/user-attachments/assets/0c790aae-a01a-49a0-b913-07da9474e16d" />
+<img width="1365" height="706" alt="image" src="https://github.com/user-attachments/assets/15f56cdb-1a97-487a-b3fb-cde609d8bd13" />
+<img width="1281" height="649" alt="image" src="https://github.com/user-attachments/assets/19fdf3bf-0788-4edf-8ede-d5cd150dea77" />
+<img width="1365" height="599" alt="image" src="https://github.com/user-attachments/assets/46b31835-8c44-4deb-a6f4-814c34253782" />
+
 
 ## Variables de entorno requeridas
 
@@ -64,30 +80,13 @@ docker compose down
 
 ## Endpoints disponibles
 
-| Método | URL | Descripción |
-|--------|-----|-------------|
-| GET | `/actuator/health` | Estado de la aplicación |
-| POST | `/api/productos` | Crear producto |
-| GET | `/api/productos` | Listar productos activos |
-| GET | `/api/productos/{id}` | Buscar por ID |
-| DELETE | `/api/productos/{id}` | Eliminar producto |
-
----
-
-## Despliegue en Railway
-
-URL pública: **[pendiente tras despliegue]**
-
-### Pasos realizados
-1. Conectar repositorio GitHub a Railway
-2. Railway detecta el Dockerfile automáticamente
-3. Agregar servicio PostgreSQL desde el panel de Railway
-4. Configurar variables de entorno en Railway:
-   - `SPRING_PROFILES_ACTIVE=prod`
-   - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
-   - `DB_USER=${{Postgres.PGUSER}}`
-   - `DB_PASS=${{Postgres.PGPASSWORD}}`
-5. Generar dominio público en Settings → Networking
+| Método | URL | Descripción | Código |
+|--------|-----|-------------|--------|
+| GET | `/actuator/health` | Estado de la aplicación | 200 |
+| POST | `/api/productos` | Crear producto | 201 |
+| GET | `/api/productos` | Listar productos activos | 200 |
+| GET | `/api/productos/{id}` | Buscar por ID | 200/404 |
+| DELETE | `/api/productos/{id}` | Eliminar producto | 204/404 |
 
 ---
 
@@ -95,13 +94,21 @@ URL pública: **[pendiente tras despliegue]**
 
 ```
 lobo-post1-u12/
-├── Dockerfile
+├── Dockerfile                          ← Multi-stage (JDK builder + JRE prod)
 ├── .dockerignore
-├── docker-compose.yml
+├── docker-compose.yml                  ← App + PostgreSQL
 ├── pom.xml
 ├── README.md
 └── src/main/resources/
-    ├── application.properties          ← perfil dev (H2)
-    ├── application-prod.properties     ← perfil prod (PostgreSQL)
+    ├── application.properties          ← Perfil dev (H2, puerto 8080)
+    ├── application-prod.properties     ← Perfil prod (PostgreSQL)
     └── logback-spring.xml
 ```
+
+---
+
+## Commits
+
+1. `feat: Dockerfile multi-stage y .dockerignore`
+2. `feat: docker-compose con PostgreSQL y perfil de produccion`
+3. `docs: README con instrucciones de despliegue y Railway`
