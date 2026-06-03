@@ -1,112 +1,64 @@
-# lobo-post1-u11
+# lobo-post1-u12
 
-**Programación Web — Unidad 11: Buenas Prácticas y Patrones de Diseño**  
-**Post-Contenido 1 — Refactorización con SOLID, DAO/DTO y @ControllerAdvice**  
-Estudiante: Farid Lobo | Código: 1152338
+**Programación Web — Unidad 12: Despliegue y CI/CD**  
+**Post-Contenido 1 — Contenedorizar la Aplicación Spring Boot y Desplegar en Railway**  
+Estudiante: Farid Lobo | Código: 1152338  
+GitHub: github.com/faridl28/lobo-post1-u12
 
 ---
 
 ## Descripción
 
-Aplicación Spring Boot que refactoriza un catálogo de productos aplicando:
-
-- **SRP** (Single Responsibility Principle): cada clase tiene una única responsabilidad.
-- **DIP** (Dependency Inversion Principle): el controlador depende de la interfaz `ProductoService`, no de la implementación concreta.
-- **Patrón DAO**: `ProductoRepository` extiende `JpaRepository`, centralizando el acceso a datos.
-- **Patrón DTO**: `ProductoRequestDTO` (entrada con validaciones) y `ProductoResponseDTO` (salida sin campos sensibles).
-- **Factory**: `ProductoFactory` centraliza la conversión entre entidad y DTOs.
-- **@RestControllerAdvice**: `GlobalExceptionHandler` centraliza el manejo de excepciones con respuestas `ApiError` estandarizadas.
+Contenedorización del catálogo de productos con Docker multi-stage y despliegue en Railway con PostgreSQL.
 
 ---
 
-## Arquitectura en Capas
+## Requisitos locales
 
-```
-                    ┌─────────────────────────┐
-                    │   ProductoController    │  ← Capa Web (REST)
-                    │  @RestController        │
-                    └────────────┬────────────┘
-                                 │ depende de interfaz (DIP)
-                    ┌────────────▼────────────┐
-                    │   ProductoService       │  ← Interfaz de Servicio
-                    │   (interfaz)            │
-                    └────────────┬────────────┘
-                                 │ implementada por
-                    ┌────────────▼────────────┐
-                    │  ProductoServiceImpl    │  ← Lógica de negocio (SRP)
-                    │  @Service               │
-                    └──────┬──────────┬───────┘
-                           │          │
-          ┌────────────────▼──┐  ┌────▼──────────────────┐
-          │ ProductoRepository│  │   ProductoFactory     │
-          │ (DAO - JPA)       │  │   @Component          │
-          └────────────────┬──┘  └────┬──────────────────┘
-                           │          │
-          ┌────────────────▼──┐  ┌────▼──────────────────┐
-          │  Producto         │  │  ProductoRequestDTO   │
-          │  @Entity          │  │  ProductoResponseDTO  │
-          └───────────────────┘  └───────────────────────┘
-
-          ┌─────────────────────────────────────────────┐
-          │         GlobalExceptionHandler              │
-          │         @RestControllerAdvice               │
-          │  - RecursoNoEncontradoException  → 404      │
-          │  - MethodArgumentNotValid        → 400      │
-          │  - Exception genérica            → 500      │
-          └─────────────────────────────────────────────┘
-```
-
----
-
-## Estructura de Paquetes
-
-```
-src/main/java/com/empresa/catalogo/
-├── CatalogoApplication.java
-├── controller/
-│   └── ProductoController.java
-├── service/
-│   ├── ProductoService.java          (interfaz)
-│   └── ProductoServiceImpl.java      (implementación)
-├── repository/
-│   └── ProductoRepository.java       (DAO)
-├── dto/
-│   ├── ProductoRequestDTO.java
-│   └── ProductoResponseDTO.java
-├── entity/
-│   └── Producto.java
-├── factory/
-│   └── ProductoFactory.java
-└── exception/
-    ├── ApiError.java
-    ├── GlobalExceptionHandler.java
-    └── RecursoNoEncontradoException.java
-```
-
----
-
-## Requisitos
-
+- Docker Desktop instalado y en ejecución
+- Maven 3.8+
 - Java 17+
-- Maven 3.9.x
 
 ---
 
-## Ejecución
+## Construcción y ejecución local
 
+### Solo Docker (sin Compose)
 ```bash
-# Clonar el repositorio
-git clone https://github.com/faridl28/lobo-post1-u11.git
-cd lobo-post1-u11
-
-# Compilar
-mvn compile
-
-# Ejecutar
-mvn spring-boot:run
+docker build -t catalogo:local .
+docker run -p 8080:8080 catalogo:local
 ```
 
-La aplicación iniciará en **http://localhost:8081**
+### Con Docker Compose (app + PostgreSQL)
+```bash
+docker compose up -d --build
+```
+
+Verificar que ambos servicios estén activos:
+```bash
+docker compose ps
+```
+
+Verificar salud de la aplicación:
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+Detener los servicios:
+```bash
+docker compose down
+```
+
+---
+
+## Variables de entorno requeridas
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `SPRING_PROFILES_ACTIVE` | Perfil activo | `prod` |
+| `DATABASE_URL` | URL JDBC de PostgreSQL | `jdbc:postgresql://host:5432/db` |
+| `DB_USER` | Usuario de la base de datos | `appuser` |
+| `DB_PASS` | Contraseña de la base de datos | `apppass` |
 
 ---
 
@@ -114,6 +66,7 @@ La aplicación iniciará en **http://localhost:8081**
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
+| GET | `/actuator/health` | Estado de la aplicación |
 | POST | `/api/productos` | Crear producto |
 | GET | `/api/productos` | Listar productos activos |
 | GET | `/api/productos/{id}` | Buscar por ID |
@@ -121,33 +74,34 @@ La aplicación iniciará en **http://localhost:8081**
 
 ---
 
-## Ejemplos de uso (curl)
+## Despliegue en Railway
 
-**Checkpoint 2 — POST exitoso:**
-```bash
-curl -s -X POST http://localhost:8081/api/productos \
-  -H "Content-Type: application/json" \
-  -d '{"nombre":"Laptop","precio":3500000,"categoria":"ELECTRONICA"}' | jq
-```
+URL pública: **[pendiente tras despliegue]**
 
-**Checkpoint 3 — Error 404:**
-```bash
-curl -s http://localhost:8081/api/productos/999 | jq
-# {"status":404,"error":"Not Found","mensaje":"Producto con id 999 no encontrado.",...}
-```
-
-**Checkpoint 3 — Error 400:**
-```bash
-curl -s -X POST http://localhost:8081/api/productos \
-  -H "Content-Type: application/json" \
-  -d '{}' | jq
-# {"status":400,"error":"Bad Request","mensaje":"nombre: El nombre es obligatorio; precio: El precio debe ser mayor a cero",...}
-```
+### Pasos realizados
+1. Conectar repositorio GitHub a Railway
+2. Railway detecta el Dockerfile automáticamente
+3. Agregar servicio PostgreSQL desde el panel de Railway
+4. Configurar variables de entorno en Railway:
+   - `SPRING_PROFILES_ACTIVE=prod`
+   - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+   - `DB_USER=${{Postgres.PGUSER}}`
+   - `DB_PASS=${{Postgres.PGPASSWORD}}`
+5. Generar dominio público en Settings → Networking
 
 ---
 
-## Consola H2
+## Estructura del proyecto
 
-Disponible en: **http://localhost:8081/h2-console**  
-JDBC URL: `jdbc:h2:mem:catalogodb`  
-Usuario: `sa` | Sin contraseña
+```
+lobo-post1-u12/
+├── Dockerfile
+├── .dockerignore
+├── docker-compose.yml
+├── pom.xml
+├── README.md
+└── src/main/resources/
+    ├── application.properties          ← perfil dev (H2)
+    ├── application-prod.properties     ← perfil prod (PostgreSQL)
+    └── logback-spring.xml
+```
